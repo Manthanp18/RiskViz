@@ -84,8 +84,10 @@ const Table = ({ data }) => {
           onChange={(e) => filterByYear(e.target.value)}
         >
           <option value="">All Years</option>
-          {uniqueYears.map((val) => (
-            <option value={val}>{val}</option>
+          {uniqueYears.map((val, index) => (
+            <option key={index} value={val}>
+              {val}
+            </option>
           ))}
         </select>
         <label htmlFor="locationFilter">Filter by Year:</label>
@@ -97,8 +99,10 @@ const Table = ({ data }) => {
           onChange={(e) => handleLocationChange(e.target.value)}
         >
           <option value="">All Years</option>
-          {locations.map((val) => (
-            <option value={val}>{val}</option>
+          {locations.map((val, index) => (
+            <option key={index} value={val}>
+              {val}
+            </option>
           ))}
         </select>
       </div>
