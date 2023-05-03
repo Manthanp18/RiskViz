@@ -47,7 +47,7 @@ export default async function Home() {
   const climateRiskData = await fetchSpreadsheetData();
 
   return (
-    <div className="container mx-auto my-8 px-4">
+    <div className="container ml-20 my-4 px-2">
       <h1 className="text-3xl font-bold mb-4">Climate Risk App</h1>
 
       <Dashboard climateRiskData={climateRiskData} />

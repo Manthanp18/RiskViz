@@ -1,8 +1,11 @@
 "use client";
-import Map from "./map";
+import { useEffect, useState } from "react";
+
 import DataTable from "./Table";
 import Chart from "./chart";
-import { useEffect, useState } from "react";
+
+import Maps from "./map";
+import { useSelector } from "react-redux";
 
 export default function Dashboard({ climateRiskData }) {
   const [year, setYear] = useState("2020");
@@ -13,50 +16,43 @@ export default function Dashboard({ climateRiskData }) {
   const loadData = async () => {
     setData(newData);
   };
-
   useEffect(() => {
+    // dispatch(increment(newData));
     loadData();
   }, [year]);
+  const locationObject = useSelector((state) => state.dataReducer.climateData);
+  let mapSelectedYear = useSelector((state) => state.dataReducer.year);
+  const selectYears = mapSelectedYear?.toString();
 
+  const updatedData = data.map((item) => {
+    return {
+      ...item,
+      RiskFactors: JSON.parse(item.RiskFactors),
+    };
+  });
+  console.log({ updatedData, data });
+  const latLongString = locationObject.Lat + "," + locationObject.Long;
   return (
-    <div className="flex h-screen">
-      <div className="w-1/5 p-4 mt-4">
-        <h1 className="text-white text-xl font-bold mb-4">Navigation</h1>
-        <button
-          className={`block mb-2 py-2 px-4 rounded-lg focus:outline-none ${
-            selectedComponent === "map"
-              ? "bg-gray-700 text-white"
-              : "text-gray-400"
-          }`}
-          onClick={() => setSelectedComponent("map")}
-        >
-          Map
-        </button>
-        <button
-          className={`block mb-2 py-2 px-4 rounded-lg focus:outline-none ${
-            selectedComponent === "chart"
-              ? "bg-gray-700 text-white"
-              : "text-gray-400"
-          }`}
-          onClick={() => setSelectedComponent("chart")}
-        >
-          Chart
-        </button>
-        <button
-          className={`block mb-2 py-2 px-4 rounded-lg focus:outline-none ${
-            selectedComponent === "datatable"
-              ? "bg-gray-700 text-white"
-              : "text-gray-400"
-          }`}
-          onClick={() => setSelectedComponent("datatable")}
-        >
-          Data Table
-        </button>
+    <div className="flex flex-col h-screen bg-stone-900 p-2">
+      <div className="flex-1 flex  border-b-4 pb-6">
+        <div className="h-80 w-1/2 pr-4 border-r-4 ">
+          <Maps data={data} />
+        </div>
+        <div className="w-1/2 mt-11">
+          <Chart
+            data={data}
+            object={locationObject}
+            latLongString={latLongString}
+            mapSelectedYear={selectYears}
+          />
+        </div>
       </div>
-      <div className="w-4/5 p-4">
-        {selectedComponent === "map" && <Map data={data} />}
-        {selectedComponent === "chart" && <Chart data={data} />}
-        {selectedComponent === "datatable" && <DataTable data={data} />}
+      <div className="flex-1 mt-5">
+        <DataTable
+          data={updatedData}
+          latLongString={latLongString || ""}
+          mapSelectedYear={selectYears || ""}
+        />
       </div>
     </div>
   );

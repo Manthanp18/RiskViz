@@ -1,4 +1,5 @@
 import "./globals.css";
+import { Providers } from "./redux/provider";
 
 export const metadata = {
   title: "Next.js",
@@ -14,22 +15,10 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <title>Climate App</title>
-        {/* <link
-          href="https://api.mapbox.com/mapbox-gl-js/v2.8.2/mapbox-gl.css"
-          rel="stylesheet"
-        /> */}
-        <meta charSet="utf-8" />
-        <meta content="IE=edge" httpEquiv="X-UA-Compatible" />
-        <meta content="width=device-width, initial-scale=1" name="viewport" />
-        <link href="/static/favicon.ico" rel="shortcut icon" />
-        {/* <link
-          href="https://api.mapbox.com/mapbox-gl-js/v0.51.0/mapbox-gl.css"
-          rel="stylesheet"
-        /> */}
-        <meta property="og:image" content="/static/banner.jpg" />
-        <meta content="en_US" property="og:locale" />
       </head>
-      <body>{children}</body>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

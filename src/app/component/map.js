@@ -1,7 +1,10 @@
 "use client";
-import React, { useCallback, useMemo, useState } from "react";
+
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Map, { Marker, Popup } from "react-map-gl";
 import Pin from "./pin";
+import { increment, year } from "../redux/feature/dataSlice";
+import { useDispatch, useSelector } from "react-redux";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 const initialViewState = {
@@ -10,8 +13,10 @@ const initialViewState = {
   zoom: 2.5,
 };
 
-function Maps({ data }) {
+const Maps = ({ data }) => {
+  const dispatch = useDispatch();
   const [selectedYear, setSelectedYear] = useState(null);
+  const [popupInfo, setPopupInfo] = useState(null);
   const groupedLocationData = data.reduce((acc, obj) => {
     const key = obj.Lat + "," + obj.Long;
     if (!acc[key]) {
@@ -20,9 +25,8 @@ function Maps({ data }) {
     acc[key].push(obj);
     return acc;
   }, {});
-  // const locations = Object.keys(groupedLocationData);
-  // const [selectedDecade, setSelectedDecade] = useState(2050);
-  const [popupInfo, setPopupInfo] = useState(null);
+
+  console.log({ popupInfo });
 
   const filteredData = useMemo(() => {
     if (!selectedYear) {
@@ -30,7 +34,9 @@ function Maps({ data }) {
     }
     const filtered = {};
     for (const [key, arr] of Object.entries(groupedLocationData)) {
-      const filteredArr = arr.filter((obj) => obj.Year === selectedYear);
+      const filteredArr = arr.filter(
+        (obj) => Math.floor(obj.Year / 10) * 10 === selectedYear
+      );
       if (filteredArr.length > 0) {
         filtered[key] = filteredArr;
       }
@@ -38,7 +44,9 @@ function Maps({ data }) {
     return filtered;
   }, [groupedLocationData, selectedYear]);
 
-  console.log({ filteredData });
+  useEffect(() => {
+    dispatch(year(selectedYear));
+  }, [selectedYear]);
 
   const getMarkerColor = (riskRating) => {
     if (riskRating >= 0.8) {
@@ -49,30 +57,28 @@ function Maps({ data }) {
       return "green";
     }
   };
-  // console.log({ popupInfo });
 
   return (
-    <div className="h-2/3 w-full pt-4">
-      <div>
-        <label htmlFor="year-select" className="mr-2">
-          Select Year:
-        </label>
-        <select
-          id="year-select"
-          className="border rounded p-1"
-          value={selectedYear ?? ""}
-          onChange={(e) =>
-            setSelectedYear(e.target.value ? parseInt(e.target.value) : null)
-          }
-        >
-          <option value="">All Years</option>
-          {Array.from(new Set(data.map((obj) => obj.Year))).map((year) => (
-            <option key={year} value={year}>
-              {year}
-            </option>
-          ))}
-        </select>
-      </div>
+    <div className="h-full py-4">
+      <label htmlFor="year-select" className="mr-2 mb-2">
+        Select Year:
+      </label>
+      <select
+        id="year-select"
+        className="bg-stone-600 p-2 rounded-lg mb-2"
+        value={selectedYear ?? ""}
+        onChange={(e) =>
+          setSelectedYear(e.target.value ? parseInt(e.target.value) : null)
+        }
+      >
+        <option value="">All Years</option>
+        {Array.from(new Set(data.map((obj) => obj.Year))).map((year) => (
+          <option key={year} value={year}>
+            {year}
+          </option>
+        ))}
+      </select>
+
       <Map
         initialViewState={initialViewState}
         mapStyle="mapbox://styles/mapbox/dark-v9"
@@ -82,7 +88,6 @@ function Maps({ data }) {
           .filter(([, arr]) => arr.length > 0) // filter out empty arrays
           .map(([coords, arr]) => {
             const { Lat, Long } = arr[0]; // get Lat and Long from first object in array
-            console.log(arr[0]);
             return (
               <Marker
                 key={coords}
@@ -90,10 +95,15 @@ function Maps({ data }) {
                 longitude={parseFloat(Long)}
                 anchor="bottom"
                 onClick={(e) => {
-                  // If we let the click event propagates to the map, it will immediately close the popup
-                  // with `closeOnClick: true`
                   e.originalEvent.stopPropagation();
                   setPopupInfo(arr[0]);
+                  dispatch(increment(arr[0]));
+                }}
+                onMouseEnter={() => {
+                  setPopupInfo(arr[0]);
+                }}
+                onMouseLeave={() => {
+                  setPopupInfo(null);
                 }}
               >
                 <Pin
@@ -111,62 +121,16 @@ function Maps({ data }) {
             onClose={() => setPopupInfo(null)}
           >
             <div className="text-slate-950">
-              Asset Name :{popupInfo.AssetName},
+              Asset Name: {popupInfo.AssetName}
             </div>
             <div className="text-slate-950">
-              Business Catogary:
-              {popupInfo.BusinessCatogary}
+              Business Category: {popupInfo.BusinessCategory}
             </div>
-
-            {/* <img width="100%" src={popupInfo.image} /> */}
           </Popup>
         )}
       </Map>
     </div>
   );
-}
+};
 
 export default Maps;
-
-const data = {
-  "42.83f34,-80.382297": [
-    {
-      AssetName: "Jones Ltd",
-      Lat: "42.8334",
-      Long: "-80.38297",
-      BusinessCatogary: "Manufacturing",
-      RiskRating: "0.69",
-      Year: 2030,
-    },
-  ],
-  "42.8vf3234,-80.38v297": [
-    {
-      AssetName: "Jones Ltd",
-      Lat: "42.8334",
-      Long: "-80.38297",
-      BusinessCatogary: "Manufacturing",
-      RiskRating: "0.69",
-      Year: 2030,
-    },
-  ],
-  "42.8vf334,-80.382vf27": [
-    {
-      AssetName: "Jones Ltd",
-      Lat: "42.8334",
-      Long: "-80.38297",
-      BusinessCatogary: "Manufacturing",
-      RiskRating: "0.69",
-      Year: 2030,
-    },
-  ],
-  "42.83334,-80.38227": [
-    {
-      AssetName: "Jones Ltd",
-      Lat: "42.8334",
-      Long: "-80.38297",
-      BusinessCatogary: "Manufacturing",
-      RiskRating: "0.69",
-      Year: 2030,
-    },
-  ],
-};

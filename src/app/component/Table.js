@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 
-const Table = ({ data }) => {
+const Table = ({ data, latLongString, mapSelectedYear }) => {
   const groupedLocationData = data.reduce((acc, obj) => {
     const key = obj.Lat + "," + obj.Long;
     if (!acc[key]) {
@@ -10,22 +10,44 @@ const Table = ({ data }) => {
     acc[key].push(obj);
     return acc;
   }, {});
-  const locations = Object.keys(groupedLocationData);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [yearFilter, setYearFilter] = useState(2030);
-  const newData = data.slice(1);
-  const [filteredData, setFilteredData] = useState(newData);
+  const [yearFilter, setYearFilter] = useState(mapSelectedYear);
+  // const [groupedLocationData, setGroupedLocationData] = useState({});
+  const [filteredData, setFilteredData] = useState(data);
   const [sortOrder, setSortOrder] = useState("asc");
-  const [selectedLocation, setSelectedLocation] = useState(locations[0]);
+  const [riskFactorFilter, setRiskFactorFilter] = useState("");
+
+  const [selectedLocation, setSelectedLocation] = useState(latLongString);
+
+  const locations = Object.keys(groupedLocationData);
+
+  useEffect(() => {
+    if (latLongString && groupedLocationData[latLongString]) {
+      setFilteredData(groupedLocationData[latLongString]);
+      setSelectedLocation(latLongString);
+    } else if (mapSelectedYear) {
+      setYearFilter(mapSelectedYear);
+      filterByYear(mapSelectedYear);
+    } else if (data.length) {
+      // Check if data is not empty
+      setFilteredData(data);
+    }
+  }, [latLongString, mapSelectedYear, data]);
 
   // sorting function for the Risk Rating column
   function handleLocationChange(event) {
-    const newSelectedLocation = event;
-    setSelectedLocation(newSelectedLocation); // update selected location when dropdown value changes
-    const filteredLocationData = groupedLocationData[newSelectedLocation];
-    setFilteredData(filteredLocationData);
+    setSelectedLocation(event);
+    setFilteredData(groupedLocationData[event]);
   }
+  const filterByYear = (year = "") => {
+    setYearFilter(year);
+    const filteredData = data.filter((val) => {
+      return year === "" || val.Year === year;
+    });
+    setFilteredData(filteredData);
+  };
 
   const sortByRiskRating = () => {
     const sortedData = [...filteredData].sort((a, b) => {
@@ -38,20 +60,20 @@ const Table = ({ data }) => {
     setFilteredData(sortedData);
     setSortOrder(sortOrder === "asc" ? "desc" : "asc");
   };
-
-  // filtering function for the Year column
-  const filterByYear = (year = "") => {
-    setYearFilter(year);
-    const filteredData = newData.filter((val) => {
-      return year === "" || val.Year === year;
-    });
+  const filterData = () => {
+    const filteredData = data.filter(
+      (val) =>
+        (yearFilter === "" || val.Year === yearFilter) &&
+        (riskFactorFilter === "" ||
+          val.RiskFactors.some((factor) => factor === riskFactorFilter))
+    );
     setFilteredData(filteredData);
+    setCurrentPage(1);
   };
 
+  // filtering function for the Year column
+
   // call the filter function once with an empty string as the parameter value to initialize the filteredData state with all data
-  useEffect(() => {
-    filterByYear();
-  }, []);
 
   // calculate the index of the last row on the current page
   const indexOfLastRow = currentPage * rowsPerPage;
@@ -90,7 +112,9 @@ const Table = ({ data }) => {
             </option>
           ))}
         </select>
-        <label htmlFor="locationFilter">Filter by Year:</label>
+        <label className="ml-2" htmlFor="locationFilter">
+          Filter by Location:
+        </label>
         <select
           className="bg-stone-600 p-2 rounded-lg mt-2"
           id="locationFilter"
@@ -98,7 +122,7 @@ const Table = ({ data }) => {
           value={selectedLocation}
           onChange={(e) => handleLocationChange(e.target.value)}
         >
-          <option value="">All Years</option>
+          <option value="">All Location</option>
           {locations.map((val, index) => (
             <option key={index} value={val}>
               {val}
@@ -106,7 +130,7 @@ const Table = ({ data }) => {
           ))}
         </select>
       </div>
-      <table className="border border-gray-600 mt-10">
+      <table className="border border-gray-600 mt-6">
         <thead className="bg-stone-500">
           <tr>
             <th className="w-80 border border-gray-600">Name</th>
@@ -140,7 +164,11 @@ const Table = ({ data }) => {
                 {val.RiskRating}
               </td>
               <td className="h-40 px-4 border border-gray-600">
-                {val.RiskFactors}
+                {Object.entries(val.RiskFactors).map(([key, value]) => (
+                  <div key={key}>
+                    {key}: {value}
+                  </div>
+                ))}
               </td>
               <td className="h-40 px-4 border border-gray-600">{val.Year}</td>
             </tr>
